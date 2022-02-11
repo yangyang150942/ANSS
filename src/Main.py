@@ -4,12 +4,12 @@ import math
 
 def Method_1(Data_inlying, Data_len_inlying):
     alpha = 1 # location sensitivity parameter
-    gamma = 0.3 # similarity parameter
-    R_hat = 1 # reputation
-    kai = 0 # centroid index
-    Dc = 0.05  # location diameter
+    gamma = 0.2 # similarity parameter
+    R_hat = 0.5 # reputation
+    chi = 0 # centroid index
+    Dc = 0.05 # location diameter
     Psi = 1 # punishment factor
-    B = 10000 # Budget
+    B = 500 # Budget
     
     index_ID = 0
     index_data = 1
@@ -29,7 +29,7 @@ def Method_1(Data_inlying, Data_len_inlying):
     S = np.empty(shape=(Data_len_inlying,Data_len_inlying),dtype=object)
     sum_S = np.empty(shape=(Data_len_inlying,1),dtype=object)
     lambda_dt = 1
-    lambda_tm = 0.94
+    lambda_tm = 1
     Lambda_r = lambda_dt * lambda_tm
     Tb = np.empty(shape=(Data_len_inlying,1),dtype=object) #base trust score
     Tf = np.empty(shape=(Data_len_inlying,1),dtype=object) #final trust score
@@ -52,12 +52,11 @@ def Method_1(Data_inlying, Data_len_inlying):
 
         if sum_temp < sum_min:
             sum_min = sum_temp
-            kai = i
-    data_kai = Data_inlying[kai][index_tem]
+            chi = i
+    print("Centroid:")
+    print(chi)
+    data_kai = Data_inlying[chi][index_tem]
     print(data_kai)
-
-#    print(min_dist)
-#    print(max_dist)
 
     #Prepare for getting similarity factor
     min_dist = np.min(dist)
@@ -75,8 +74,8 @@ def Method_1(Data_inlying, Data_len_inlying):
     # Calculate the final trust
     for i in range(Data_len_inlying):
         delta[i] = (sum_S[i] / (Data_len_inlying - 1)) * math.exp(-1/Data_len_inlying)*gamma # get similarity factor
-        Theta[i] = math.exp(-Dc*alpha)*(1-math.exp(-loc_dist[i][kai]*alpha)) # get location factor
-        Tb[i] = min(R_hat*(1-Theta[i])*Lambda_r,1) # get base trust
+        Theta[i] = math.exp(-Dc*alpha)*(1-math.exp(-loc_dist[i][chi]*alpha)) # get location factor
+        Tb[i] = min((1-Theta[i])*Lambda_r,1) # get base trust
         Tf[i] = Tb[i]*(1+delta[i]) # final trust
         level[i] = Tf[i] - R_hat # feedback level
 #        sum_temp += Tf[i]
@@ -84,34 +83,31 @@ def Method_1(Data_inlying, Data_len_inlying):
             phi[i] = 0
         else:
             phi[i] = math.log(Tf[i]+1)
-#           if i!=0:
-#                phi[i] = math.log(sum_temp) - math.log(sum_temp_2)
-#            else:
-#                phi[i] = math.log(Tf[i])
-#        sum_temp_2 += Tf[i]
+
     sum_Tf = phi.sum()
     for i in range(Data_len_inlying):
         if Tf[i] < 0.5:
             phi[i] = 0
         else:
-            phi[i] = phi[i]/sum_Tf
-    print("Base trust:")
-    print(Tb)
-    print("Similarity factor:")
-    print(delta)
-    print("Final trust:")
-    print(Tf)
+            phi[i] = phi[i]/sum_Tf * B
+    np.savetxt("OutputMethod1_ad2.csv",phi,delimiter=',')
+    #print("Base trust:")
+    #print(Tb)
+    #print("Similarity factor:")
+    #print(delta)
+    #print("Final trust:")
+    #print(Tf[0:49])
     print("Rewards:")
     print(phi)
     
 def Method_2(Data_inlying, Data_len_inlying):
     alpha = 1 # location sensitivity parameter
-    gamma = 0.3 # similarity parameter
-    R_hat = 1 # reputation
+    gamma = 0.2 # similarity parameter
+    R_hat = 0.5 # reputation
     kai = 0 # centroid index
     Dc = 0.05  # location diameter
-    Psi = 1 # punishment factor
-    B = 10000 # Budget
+    Psi = 1.2 # punishment factor
+    B = 500 # Budget
     
     index_ID = 0
     index_data = 1
@@ -130,7 +126,7 @@ def Method_2(Data_inlying, Data_len_inlying):
     S = np.empty(shape=(Data_len_inlying,Data_len_inlying),dtype=object)
     sum_S = np.empty(shape=(Data_len_inlying,1),dtype=object)
     lambda_dt = 1
-    lambda_tm = 0.94
+    lambda_tm = 1
     Lambda_r = lambda_dt * lambda_tm
     Tb = np.empty(shape=(Data_len_inlying,1),dtype=object) #base trust score
     Tf = np.empty(shape=(Data_len_inlying,1),dtype=object) #final trust score
@@ -187,23 +183,32 @@ def Method_2(Data_inlying, Data_len_inlying):
             phi[i] = Tf[i]/sum_Tf * B * math.exp(level[i]*Psi)
         else:
             phi[i] = Tf[i]/sum_Tf * B
-    print("Distance:")
-    print(dist)
-    print("Distance factor:")
-    print(Theta)
-    print("Base trust:")
-    print(Tb)
-    print("Similarity factor:")
-    print(delta)
-    print("Final trust:")
-    print(Tf)
+
+    np.savetxt("OutputMethod2_ad2.csv",phi,delimiter=',')
+    #print("Distance:")
+    #print(dist)
+    #print("Distance factor:")
+    #print(Theta)
+    #print("Base trust:")
+    #print(Tb)
+    #print("Similarity factor:")
+    #print(delta)
+    #print("Final trust:")
+    #print(Tf)
     print("Rewards:")
     print(phi)
     
-def Method_3(Data_inlying, Data_len_inlying):
+def Method_3(Data_inlying, Data_len_inlying, Data_len):
     # Remuneration Method 3
     epsilon = 0.05
     sum_quality = 0
+    B = 500
+    index_ID = 0
+    index_data = 1
+    index_Time = 2
+    index_lat = 3
+    index_lon = 4
+    index_tem = 5
     dist = np.empty(shape=(Data_len_inlying,Data_len_inlying), dtype=object)
     dist_square = np.empty(shape=(Data_len_inlying,Data_len_inlying), dtype=object)
     theta = np.empty(shape=(Data_len_inlying,1),dtype=object)
@@ -214,7 +219,7 @@ def Method_3(Data_inlying, Data_len_inlying):
     B_n = B / Data_len
     sum_temp = 0
     sum_min = float("inf")
-    kai = 0 
+    chi = 0 
     for i in range(Data_len_inlying):
         for j in range(Data_len_inlying):
             dist_square[i][j] = (Data_inlying[i][index_tem]-Data_inlying[j][index_tem])*(Data_inlying[i][index_tem]-Data_inlying[j][index_tem])
@@ -227,30 +232,38 @@ def Method_3(Data_inlying, Data_len_inlying):
     
         if sum_temp < sum_min:
             sum_min = sum_temp
-            kai = i
-
-    print(kai)
-    data_kai = Data_inlying[kai][index_tem]
-    print(data_kai)
+            chi = i
+    print("Centroid:")
+    print(chi)
+    data_chi = Data_inlying[chi][index_tem]
+    print(data_chi)
     for i in range(Data_len_inlying):
-        theta[i] = dist[i][kai] / data_kai
-        quality[i] = 1 / (theta[i] + epsilon)
-        sum_quality += quality[i]
+        if i!=chi:
+            theta[i] = dist[i][chi] / data_chi
+            quality[i] = 1 / (theta[i] + epsilon)
+            sum_quality += quality[i]
+        
 
-    avg_quality_frac = 1.0 / Data_len_inlying  
+    avg_quality_frac = 1.0 / (Data_len_inlying-1)
+    quality[chi] = 0.0
+    quality[chi] = np.max(quality)
+    sum_quality += quality[chi]
+    print("Theta:")
     print(theta)
-    print(avg_quality_frac)
-    print(sum_quality)
+    #print(avg_quality_frac)
+    #print(sum_quality)
     for i in range(Data_len_inlying):
         quality_frac[i] = quality[i] / sum_quality
         reward1[i] = B_m + B_n * (quality_frac[i] - avg_quality_frac)
-        
-    print(quality_frac)
-    print(reward1)
-    print(np.amax(reward1))
-    print(np.amin(reward1))  
+   
+    np.savetxt("OutputMethod3_ad2.csv",reward1,delimiter=',')
+    print("Distance:")
+    print(dist)
+    #print("Fraction quality:")
+    #print(quality_frac)
+    #print(reward1)
 
-WhichMethod = 1
+WhichMethod = 3
 index_ID = 0
 index_data = 1
 index_Time = 2
@@ -259,13 +272,15 @@ index_lon = 4
 index_tem = 5
 r_threshold = 5
 frac_threshold = 0.75
-B = 10000
+B = 500
 
 #Read data from csv file
-df=pd.read_csv('..\crowd_temperature.csv', sep=',',header=None,skiprows=1)
+df=pd.read_csv('crowd_temperature_origin_ad3.csv', sep=',',header=None,skiprows=1)
 dataset = df.to_numpy()
+#dataset = dataset[0:99,:]
 Data_len = dataset[:,0].size
 Data_len_inlying = 0
+
 
 #Outlier detection
 num_threshold = Data_len*frac_threshold
@@ -287,19 +302,21 @@ for i in range(Data_len):
     
     if cnt > num_threshold:
         Data_inlying[k] = dataset[i]
+        if i>99:
+            print(k)
         k+=1
 
 Data_len_inlying = k;
-print(Data_inlying[0:(Data_len_inlying-1),:])
+#print(Data_inlying[0:(Data_len_inlying-1),:])
+print("Inlying dataset size:")
 print(Data_len_inlying)
-
+print(Data_inlying[71,:])
+print(Data_inlying[72,:])
+print(Data_inlying[73,:])
 if WhichMethod == 1:
     Method_1(Data_inlying, Data_len_inlying)
 elif WhichMethod ==2:
     Method_2(Data_inlying, Data_len_inlying)
 elif WhichMethod ==3:
     # Remuneration Method 3
-    Method_3(Data_inlying, Data_len_inlying)
-
-
-
+    Method_3(Data_inlying, Data_len_inlying, Data_len)
